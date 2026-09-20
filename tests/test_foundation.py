@@ -218,3 +218,55 @@ async def test_offline_fallback_provider():
     assert isinstance(response.data, JDAnalysisOutput)
     assert len(response.data.requirements) > 0
     assert any(r.name.startswith("Kubernetes") for r in response.data.requirements)
+
+
+def test_cors_vercel_production_origin_health():
+    """Verify that requests from deployed Vercel frontend receive correct CORS headers on health check."""
+    origin = "https://hire-flow-nine-drab.vercel.app"
+    response = client.get("/api/v1/health", headers={"Origin": origin})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == origin
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+def test_cors_vercel_production_origin_roles():
+    """Verify that requests from deployed Vercel frontend receive correct CORS headers on roles endpoint."""
+    origin = "https://hire-flow-nine-drab.vercel.app"
+    response = client.get("/api/v1/roles", headers={"Origin": origin})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == origin
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+def test_cors_preflight_options():
+    """Verify that HTTP OPTIONS preflight requests from Vercel frontend return 200 with CORS headers."""
+    origin = "https://hire-flow-nine-drab.vercel.app"
+    response = client.options(
+        "/api/v1/roles",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == origin
+    assert response.headers.get("access-control-allow-credentials") == "true"
+    assert "POST" in response.headers.get("access-control-allow-methods", "")
+
+
+def test_cors_localhost_dev_origin():
+    """Verify that localhost dev origins continue to receive correct CORS headers."""
+    origin = "http://localhost:5173"
+    response = client.get("/api/v1/health", headers={"Origin": origin})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == origin
+
+
+def test_cors_unauthorized_origin_does_not_receive_allow_header():
+    """Verify that arbitrary unapproved origins are blocked by CORS policy."""
+    origin = "https://unauthorized-malicious-site.com"
+    response = client.get("/api/v1/health", headers={"Origin": origin})
+    assert response.status_code == 200
+    assert "access-control-allow-origin" not in response.headers
+
