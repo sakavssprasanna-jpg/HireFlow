@@ -1,3 +1,4 @@
+import { apiFetch } from './api';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   HealthStatus,
@@ -93,7 +94,7 @@ export const App: React.FC = () => {
   // 1. Initial System Check & Roles Ingestion
   useEffect(() => {
     // Health check
-    fetch('/api/v1/health')
+    apiFetch('/api/v1/health')
       .then((res) => res.json())
       .then((data: HealthStatus) => {
         setHealth(data);
@@ -110,7 +111,7 @@ export const App: React.FC = () => {
       });
 
     // Fetch or seed default role
-    fetch('/api/v1/roles')
+    apiFetch('/api/v1/roles')
       .then((res) => res.json())
       .then((data: Role[]) => {
         if (data.length > 0) {
@@ -118,7 +119,7 @@ export const App: React.FC = () => {
           setSelectedRoleId(data[0].id);
         } else {
           // Initialize demo role
-          fetch('/api/v1/roles', {
+          apiFetch('/api/v1/roles', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -133,7 +134,7 @@ export const App: React.FC = () => {
           })
             .then((r) => r.json())
             .then(async (newRole: Role) => {
-              await fetch(`/api/v1/roles/${newRole.id}/requirements`, {
+              await apiFetch(`/api/v1/roles/${newRole.id}/requirements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -143,7 +144,7 @@ export const App: React.FC = () => {
                   weight: 1.0
                 })
               });
-              await fetch(`/api/v1/roles/${newRole.id}/requirements`, {
+              await apiFetch(`/api/v1/roles/${newRole.id}/requirements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -153,7 +154,7 @@ export const App: React.FC = () => {
                   weight: 1.0
                 })
               });
-              await fetch(`/api/v1/roles/${newRole.id}/requirements`, {
+              await apiFetch(`/api/v1/roles/${newRole.id}/requirements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -175,7 +176,7 @@ export const App: React.FC = () => {
   const fetchMatrix = useCallback(async (roleId: string) => {
     if (!roleId) return;
     try {
-      const res = await fetch(`/api/v1/roles/${roleId}/matrix`);
+      const res = await apiFetch(`/api/v1/roles/${roleId}/matrix`);
       if (res.ok) {
         const data: CandidateComparisonMatrixResponse = await res.json();
         setMatrixCandidates(data.candidates || []);
@@ -213,28 +214,28 @@ export const App: React.FC = () => {
 
     try {
       // 1. Candidate Record
-      const candRes = await fetch(`/api/v1/candidates/${candidateId}`);
+      const candRes = await apiFetch(`/api/v1/candidates/${candidateId}`);
       if (candRes.ok) {
         const cand: Candidate = await candRes.json();
         setSelectedCandidate(cand);
       }
 
       // 2. Evidence Claims
-      const evRes = await fetch(`/api/v1/candidates/${candidateId}/evidence`);
+      const evRes = await apiFetch(`/api/v1/candidates/${candidateId}/evidence`);
       if (evRes.ok) {
         const claims: EvidenceClaim[] = await evRes.json();
         setEvidenceClaims(claims);
       }
 
       // 3. Competency Gaps
-      const gapsRes = await fetch(`/api/v1/candidates/${candidateId}/gaps`);
+      const gapsRes = await apiFetch(`/api/v1/candidates/${candidateId}/gaps`);
       if (gapsRes.ok) {
         const gaps: CandidateGapsResponse = await gapsRes.json();
         setCandidateGaps(gaps);
       }
 
       // 4. Interview Sessions & Notes
-      const sessRes = await fetch(`/api/v1/candidates/${candidateId}/interview/sessions`);
+      const sessRes = await apiFetch(`/api/v1/candidates/${candidateId}/interview/sessions`);
       if (sessRes.ok) {
         const sessions: InterviewSession[] = await sessRes.json();
         setInterviewSessions(sessions);
@@ -248,7 +249,7 @@ export const App: React.FC = () => {
       }
 
       // 5. Document & Provenance Info
-      const docRes = await fetch(`/api/v1/candidates/${candidateId}/document`);
+      const docRes = await apiFetch(`/api/v1/candidates/${candidateId}/document`);
       if (docRes.ok) {
         const docData = await docRes.json();
         setRawDocumentText(docData.raw_text || '');
@@ -257,7 +258,7 @@ export const App: React.FC = () => {
       }
 
       // 6. Audit Trail
-      const auditRes = await fetch(`/api/v1/candidates/${candidateId}/audit-trail`);
+      const auditRes = await apiFetch(`/api/v1/candidates/${candidateId}/audit-trail`);
       if (auditRes.ok) {
         const audits: AuditEvent[] = await auditRes.json();
         setAuditEvents(audits);
@@ -286,7 +287,7 @@ export const App: React.FC = () => {
     }
 
     try {
-      const res = await fetch('/api/v1/candidates/upload', {
+      const res = await apiFetch('/api/v1/candidates/upload', {
         method: 'POST',
         body: formData,
       });
@@ -332,7 +333,7 @@ export const App: React.FC = () => {
     raw_jd_text?: string;
   }) => {
     try {
-      const res = await fetch('/api/v1/roles', {
+      const res = await apiFetch('/api/v1/roles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -357,7 +358,7 @@ export const App: React.FC = () => {
       const createdRole: Role = await res.json();
 
       // Refresh roles list from backend
-      const rolesRes = await fetch('/api/v1/roles');
+      const rolesRes = await apiFetch('/api/v1/roles');
       if (rolesRes.ok) {
         const updatedRoles: Role[] = await rolesRes.json();
         setRoles(updatedRoles);
@@ -372,7 +373,7 @@ export const App: React.FC = () => {
       setActiveTab('requisition');
     } catch (err: any) {
       if (err.name === 'TypeError' && err.message?.includes('fetch')) {
-        throw new Error('Unable to connect to backend server. Please verify the API is running at http://127.0.0.1:8000.');
+        throw new Error('Unable to connect to backend server. Please verify the backend API is online.');
       }
       throw err;
     }
@@ -387,7 +388,7 @@ export const App: React.FC = () => {
   ) => {
     if (!selectedRoleId) return;
     try {
-      const res = await fetch(`/api/v1/roles/${selectedRoleId}/requirements`, {
+      const res = await apiFetch(`/api/v1/roles/${selectedRoleId}/requirements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -405,7 +406,7 @@ export const App: React.FC = () => {
         throw new Error(err.detail || 'Failed to add evaluation criterion.');
       }
       // Refresh roles
-      const rolesRes = await fetch('/api/v1/roles');
+      const rolesRes = await apiFetch('/api/v1/roles');
       if (rolesRes.ok) {
         const updatedRoles: Role[] = await rolesRes.json();
         setRoles(updatedRoles);
@@ -416,7 +417,7 @@ export const App: React.FC = () => {
       }
     } catch (err: any) {
       if (err.name === 'TypeError' && err.message?.includes('fetch')) {
-        throw new Error('Unable to connect to backend server. Please verify the API is running at http://127.0.0.1:8000.');
+        throw new Error('Unable to connect to backend server. Please verify the backend API is online.');
       }
       throw err;
     }
@@ -428,7 +429,7 @@ export const App: React.FC = () => {
       throw new Error('No active role selected.');
     }
     try {
-      const res = await fetch(`/api/v1/roles/${selectedRoleId}/requirements/${requirementId}`, {
+      const res = await apiFetch(`/api/v1/roles/${selectedRoleId}/requirements/${requirementId}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
@@ -440,7 +441,7 @@ export const App: React.FC = () => {
         throw new Error(err.detail || err.message || `Unable to delete criterion (Status ${res.status})`);
       }
       // Refresh roles
-      const rolesRes = await fetch('/api/v1/roles');
+      const rolesRes = await apiFetch('/api/v1/roles');
       if (rolesRes.ok) {
         const updatedRoles: Role[] = await rolesRes.json();
         setRoles(updatedRoles);
@@ -454,7 +455,7 @@ export const App: React.FC = () => {
       }
     } catch (err: any) {
       if (err.name === 'TypeError' && err.message?.includes('fetch')) {
-        throw new Error('Unable to connect to backend server. Please verify the API is running at http://127.0.0.1:8000.');
+        throw new Error('Unable to connect to backend server. Please verify the backend API is online.');
       }
       throw err;
     }
@@ -465,7 +466,7 @@ export const App: React.FC = () => {
     if (!selectedCandidate || selectedCandidate.quarantined) return;
     setIsAnalyzing(true);
     try {
-      const res = await fetch(`/api/v1/candidates/${selectedCandidate.id}/evidence/analyze`, {
+      const res = await apiFetch(`/api/v1/candidates/${selectedCandidate.id}/evidence/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ai_mode: selectedAIMode })
@@ -489,7 +490,7 @@ export const App: React.FC = () => {
     if (!selectedCandidate || selectedCandidate.quarantined) return;
     setIsGeneratingQuestions(true);
     try {
-      const res = await fetch(`/api/v1/candidates/${selectedCandidate.id}/interview/questions/generate`, {
+      const res = await apiFetch(`/api/v1/candidates/${selectedCandidate.id}/interview/questions/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -524,7 +525,7 @@ export const App: React.FC = () => {
     try {
       let sessionId = interviewSessions.length > 0 ? interviewSessions[0].id : null;
       if (!sessionId) {
-        const createRes = await fetch(`/api/v1/candidates/${selectedCandidate.id}/interviews`, {
+        const createRes = await apiFetch(`/api/v1/candidates/${selectedCandidate.id}/interviews`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ interviewer_name: 'Recruiter', interview_round: 'TECHNICAL_SCREEN' })
@@ -534,7 +535,7 @@ export const App: React.FC = () => {
         sessionId = newSession.id;
       }
 
-      const res = await fetch(`/api/v1/interviews/${sessionId}/notes`, {
+      const res = await apiFetch(`/api/v1/interviews/${sessionId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -565,7 +566,7 @@ export const App: React.FC = () => {
     setNotesError(null);
     try {
       const sessionId = interviewSessions[0].id;
-      const res = await fetch(`/api/v1/interviews/${sessionId}/evidence/analyze`, {
+      const res = await apiFetch(`/api/v1/interviews/${sessionId}/evidence/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ai_mode: selectedAIMode })
@@ -596,7 +597,7 @@ export const App: React.FC = () => {
     if (!selectedCandidate || interviewSessions.length === 0) return;
     try {
       const sessionId = interviewSessions[0].id;
-      const res = await fetch(`/api/v1/interviews/${sessionId}/evidence/${proposal.id}/approve`, {
+      const res = await apiFetch(`/api/v1/interviews/${sessionId}/evidence/${proposal.id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -633,7 +634,7 @@ export const App: React.FC = () => {
 
     try {
       const sessionId = interviewSessions[0].id;
-      const res = await fetch(`/api/v1/interviews/${sessionId}/evidence/${proposal.id}/reject`, {
+      const res = await apiFetch(`/api/v1/interviews/${sessionId}/evidence/${proposal.id}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rejection_reason: reason })
@@ -686,7 +687,7 @@ export const App: React.FC = () => {
     setIsSubmittingOverride(true);
     setOverrideError(null);
     try {
-      const res = await fetch(`/api/v1/candidates/${selectedCandidate.id}/evidence/${overrideClaim.id}/override`, {
+      const res = await apiFetch(`/api/v1/candidates/${selectedCandidate.id}/evidence/${overrideClaim.id}/override`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -717,7 +718,7 @@ export const App: React.FC = () => {
     if (!selectedCandidate) return;
     setIsLoadingAudit(true);
     try {
-      const res = await fetch(`/api/v1/candidates/${selectedCandidate.id}/audit-trail`);
+      const res = await apiFetch(`/api/v1/candidates/${selectedCandidate.id}/audit-trail`);
       if (res.ok) {
         setAuditEvents(await res.json());
       }

@@ -1,3 +1,4 @@
+import { apiFetch } from '../api';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   HelpCircle,
@@ -121,7 +122,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
 
     const savedSessionId = localStorage.getItem(`hireflow_active_interview_${candidate.id}`);
     if (savedSessionId) {
-      fetch(`/api/v1/interviews/${savedSessionId}/state`)
+      apiFetch(`/api/v1/interviews/${savedSessionId}/state`)
         .then((res) => {
           if (res.ok) return res.json();
           throw new Error('Session not found');
@@ -172,7 +173,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
     setSetupError(null);
 
     try {
-      const res = await fetch(`/api/v1/candidates/${candidate.id}/interview/setup`, {
+      const res = await apiFetch(`/api/v1/candidates/${candidate.id}/interview/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -203,7 +204,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
   const handleStartInterview = async () => {
     if (!adaptiveState) return;
     try {
-      const res = await fetch(`/api/v1/interviews/${adaptiveState.session_id}/start`, {
+      const res = await apiFetch(`/api/v1/interviews/${adaptiveState.session_id}/start`, {
         method: 'POST'
       });
       if (res.ok) {
@@ -222,7 +223,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
     setActionError(null);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/v1/interviews/${adaptiveState.session_id}/questions/${adaptiveState.current_question.id}/answer`,
         {
           method: 'POST',
@@ -244,7 +245,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
 
       // If finished, load report
       if (state.status === 'COMPLETED') {
-        const summaryRes = await fetch(`/api/v1/interviews/${state.session_id}/end`, { method: 'POST' });
+        const summaryRes = await apiFetch(`/api/v1/interviews/${state.session_id}/end`, { method: 'POST' });
         if (summaryRes.ok) {
           const summary: InterviewSummaryResponse = await summaryRes.json();
           setSummaryReport(summary);
@@ -266,7 +267,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
     setActionError(null);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/v1/interviews/${adaptiveState.session_id}/questions/${adaptiveState.current_question.id}/followup`,
         {
           method: 'POST',
@@ -297,7 +298,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
   const handleSkipQuestion = async () => {
     if (!adaptiveState || !adaptiveState.current_question) return;
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/v1/interviews/${adaptiveState.session_id}/questions/${adaptiveState.current_question.id}/skip`,
         {
           method: 'POST',
@@ -312,7 +313,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
         setAnswerInput('');
 
         if (state.status === 'COMPLETED') {
-          const summaryRes = await fetch(`/api/v1/interviews/${state.session_id}/end`, { method: 'POST' });
+          const summaryRes = await apiFetch(`/api/v1/interviews/${state.session_id}/end`, { method: 'POST' });
           if (summaryRes.ok) {
             const summary = await summaryRes.json();
             setSummaryReport(summary);
@@ -328,7 +329,7 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
   const handleEndInterview = async () => {
     if (!adaptiveState) return;
     try {
-      const res = await fetch(`/api/v1/interviews/${adaptiveState.session_id}/end`, {
+      const res = await apiFetch(`/api/v1/interviews/${adaptiveState.session_id}/end`, {
         method: 'POST'
       });
       if (res.ok) {
